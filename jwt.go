@@ -19,7 +19,7 @@ type CustomClaims struct {
 
 var jwtExpire float64
 
-func SessionTest( r *http.Request ) ( jwt.Claims, error ) {
+func SessionTest( r *http.Request ) ( jwt.MapClaims, error ) {
   var err error
   var key []byte
 
@@ -30,6 +30,9 @@ func SessionTest( r *http.Request ) ( jwt.Claims, error ) {
   }
 
   session := gosmSession.GetSession(r)
+  if session.Values["jwt"] == nil {
+    return nil, errors.New( "login error" )
+  }
 
   // Parse takes the token string and a function for looking up the key. The latter is especially
   // useful if you use multiple keys for your application.  The standard is to use 'kid' in the
