@@ -5,26 +5,25 @@ import (
   log "github.com/helmutkemper/seelog"
   "errors"
   "io/ioutil"
-  "github.com/helmutkemper/gOsm/consts"
   "net/http"
   "github.com/helmutkemper/gOsmServer/gosmSession"
+  "github.com/helmutkemper/gOsmServer/setupProject"
+  "github.com/helmutkemper/gOsmServer/gosmUser"
 )
 
 type CustomClaims struct {
-  Name                string              `json:"id"`
-  Levels              []int               `json:"admin"`
+  UserName            string              `json:"userName"`
+  Levels              []int               `json:"levels"`
   jwt.StandardClaims
 }
 
-var jwtClaims map[string]interface{}
 var jwtExpire float64
-var jwtTest bool
 
 func SessionTest( r *http.Request ) ( jwt.Claims, error ) {
   var err error
   var key []byte
 
-  key, err = ioutil.ReadFile( consts.GEO_TEST_RSA_PUBLIC_KEY )
+  key, err = ioutil.ReadFile( setupProject.Config.Rsa.PublicPen )
   if err != nil {
     log.Critical( "unable to load rsa private key" )
     return nil, errors.New( "unable to load rsa private key" )
@@ -53,10 +52,6 @@ func SessionTest( r *http.Request ) ( jwt.Claims, error ) {
   }
 
   if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-    jwtClaims = claims[ "user" ].( map[ string ]interface{} )
-    jwtExpire = claims[ "exp" ].( float64 )
-    jwtTest   = true
-
     return claims, nil
   } else {
     log.Info( "security token error" )
@@ -64,12 +59,8 @@ func SessionTest( r *http.Request ) ( jwt.Claims, error ) {
   }
 }
 
-func SessionMake( w http.ResponseWriter, r *http.Request ) error {
-  if jwtTest != true {
-    return errors.New( "security process error" )
-  }
-
-  key, err := ioutil.ReadFile( consts.GEO_RSA_PRIVATE_KEY )
+func SessionMake( user gosmUser.User, w http.ResponseWriter, r *http.Request ) error {
+  key, err := ioutil.ReadFile( setupProject.Config.Rsa.PrivatePen )
   if err != nil {
     return errors.New( "unable to load rsa private key" )
   }
@@ -78,10 +69,10 @@ func SessionMake( w http.ResponseWriter, r *http.Request ) error {
   if err != nil {
     return errors.New( "private key error" )
   }
-
+jwtExpire = 1893456000
   var claims CustomClaims = CustomClaims{
-    Name: jwtClaims[ "name" ].( string ),
-    Levels: jwtClaims[ "levels" ].( []int ),
+    UserName: user.UserName,
+    Levels: user.Levels,
     StandardClaims: jwt.StandardClaims{
       ExpiresAt: int64( jwtExpire ),
     },
