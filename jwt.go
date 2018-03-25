@@ -72,7 +72,7 @@ func SessionMake( user gosmUser.User, w http.ResponseWriter, r *http.Request ) e
   if err != nil {
     return errors.New( "private key error" )
   }
-jwtExpire = 1893456000
+
   var claims CustomClaims = CustomClaims{
     UserName: user.UserName,
     Levels: user.Levels,
